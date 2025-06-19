@@ -1,0 +1,6 @@
+name: Athena
+version: '0.0.0'
+main: fr.kayrouge.athena.paper.PaperAthena
+api-version: '1.21'
+authors: [ Kayrouge, Oxozot ]
+bootstrapper: fr.kayrouge.athena.paper.AthenaBootstrap

@@ -1,0 +1,11 @@
+name: Athena
+version: '0.0.0'
+main: fr.kayrouge.athena.bukkit.BukkitAthena
+api-version: '1.21'
+authors: [ Kayrouge, Oxozot ]
+commands:
+  athena:
+    description: give info about Athena
+  furnaces:
+    permission: athena.commands.furnaces
+    description: donne un four
