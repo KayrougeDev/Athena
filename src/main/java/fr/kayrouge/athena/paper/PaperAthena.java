@@ -34,7 +34,8 @@ public class PaperAthena extends CAthena {
         registerCommand("athena", (stack, strings) -> new CAthenaCommand().sendMessage(stack.getSender()));
         registerCommand("papertest", PaperCommands::test);
         getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, commands -> {
-            commands.registrar().register(PaperCommands.contructFurnacesCommand());
+            commands.registrar().register(PaperCommands.constructFurnacesCommand());
+            commands.registrar().register(PaperCommands.constructArtifactsCommand());
         });
     }
 

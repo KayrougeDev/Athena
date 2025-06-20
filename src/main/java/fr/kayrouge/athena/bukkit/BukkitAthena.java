@@ -1,9 +1,9 @@
 package fr.kayrouge.athena.bukkit;
 
+import fr.kayrouge.athena.bukkit.command.BukkitArtifactCommand;
 import fr.kayrouge.athena.bukkit.command.BukkitAthenaCommand;
 import fr.kayrouge.athena.bukkit.command.BukkitFurnacesCommand;
 import fr.kayrouge.athena.common.CAthena;
-import fr.kayrouge.athena.common.event.CFurnaceEvent;
 import fr.kayrouge.athena.common.util.CPlatform;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.PluginCommand;
@@ -45,6 +45,7 @@ public final class BukkitAthena extends CAthena {
     private void registerCommands() {
         registerCommand("furnaces", new BukkitFurnacesCommand());
         registerCommand("athena", new BukkitAthenaCommand());
+        registerCommand("artifacts", new BukkitArtifactCommand());
     }
 
     private void registerCommand(String name, CommandExecutor executor) {

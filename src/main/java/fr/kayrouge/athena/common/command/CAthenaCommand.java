@@ -1,5 +1,6 @@
 package fr.kayrouge.athena.common.command;
 
+import fr.kayrouge.athena.common.util.CFastAccess;
 import fr.kayrouge.athena.common.util.compat.PlatformCompat;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -16,7 +17,7 @@ public class CAthenaCommand {
                         )
                 );
 
-        PlatformCompat.sendMessage(commandSender, c);
+        CFastAccess.sendMessage(commandSender, c);
 
         return true;
     }

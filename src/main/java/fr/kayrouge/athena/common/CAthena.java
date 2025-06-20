@@ -1,5 +1,6 @@
 package fr.kayrouge.athena.common;
 
+import fr.kayrouge.athena.common.artifact.Artifacts;
 import fr.kayrouge.athena.common.event.CFurnaceEvent;
 import fr.kayrouge.athena.common.event.CMiscEvents;
 import fr.kayrouge.athena.common.util.CPlatform;
@@ -17,6 +18,8 @@ public abstract class CAthena extends JavaPlugin {
         super.onEnable();
         LOGGER.info("Starting Athena on "+getPlatform());
         registerEvents();
+
+        Artifacts.init();
     }
 
     protected void registerEvents() {

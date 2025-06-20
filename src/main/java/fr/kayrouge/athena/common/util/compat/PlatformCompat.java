@@ -23,13 +23,4 @@ public class PlatformCompat {
         return PaperAthena.INSTANCE;
     }
 
-    public static void sendMessage(CommandSender target, Component message) {
-        if(PlatformCompat.isPaper) {
-            target.sendMessage(message);
-        }
-        else {
-            target.sendMessage(LegacyComponentSerializer.legacySection().serialize(message));
-        }
-    }
-
 }

@@ -3,6 +3,8 @@ package fr.kayrouge.athena.paper.command;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.tree.LiteralCommandNode;
+import fr.kayrouge.athena.common.artifact.Artifacts;
+import fr.kayrouge.athena.common.command.CArtifactCommand;
 import fr.kayrouge.athena.common.command.CFurnacesCommand;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
@@ -16,7 +18,7 @@ import org.joml.Vector3f;
 
 public class PaperCommands {
 
-    public static LiteralCommandNode<CommandSourceStack> contructFurnacesCommand() {
+    public static LiteralCommandNode<CommandSourceStack> constructFurnacesCommand() {
         CFurnacesCommand common = new CFurnacesCommand();
         return Commands.literal("furnaces")
                 .requires(ctx -> ctx.getExecutor() instanceof Player)
@@ -27,6 +29,22 @@ public class PaperCommands {
                         })
                         .executes(context -> {
                             common.execute(context.getSource().getExecutor(), new String[]{context.getArgument("type", String.class)});
+                            return Command.SINGLE_SUCCESS;
+                        })
+                )
+                .build();
+    }
+
+    public static LiteralCommandNode<CommandSourceStack> constructArtifactsCommand() {
+        return Commands.literal("artifacts")
+                .requires(ctx -> ctx.getExecutor() instanceof Player)
+                .then(Commands.argument("name", StringArgumentType.word())
+                        .suggests((context, builder) -> {
+                            Artifacts.getArtifacts().keySet().forEach(builder::suggest);
+                            return builder.buildFuture();
+                        })
+                        .executes(context -> {
+                            new CArtifactCommand().giveArtifact((Player)context.getSource().getExecutor(), context.getArgument("name", String.class));
                             return Command.SINGLE_SUCCESS;
                         })
                 )

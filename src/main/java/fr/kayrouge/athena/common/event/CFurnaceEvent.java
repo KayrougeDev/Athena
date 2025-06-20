@@ -1,5 +1,6 @@
 package fr.kayrouge.athena.common.event;
 
+import fr.kayrouge.athena.common.util.CFastAccess;
 import fr.kayrouge.athena.common.util.compat.PlatformCompat;
 import fr.kayrouge.athena.common.util.CTextUtil;
 import fr.kayrouge.athena.common.util.compat.ItemCompat;
@@ -186,7 +187,7 @@ public class CFurnaceEvent implements Listener {
                 if(itemInHand.getType() == type.getItemToUpgrade() && type != Type.NETHERITE) {
                     e.setCancelled(true);
                     if(e.getPlayer().getLevel() < type.getLevelToUpgrade() && e.getPlayer().getGameMode() != GameMode.CREATIVE) {
-                        e.getPlayer().sendMessage(Component.text("Il vous manque "+(type.getLevelToUpgrade()-e.getPlayer().getLevel())+" pour améliorer"));
+                        CFastAccess.sendMessage(e.getPlayer(), Component.text("Il vous manque "+(type.getLevelToUpgrade()-e.getPlayer().getLevel())+" pour améliorer"));
                         return;
                     }
                     Type nextType = getNextType(type);
@@ -207,7 +208,7 @@ public class CFurnaceEvent implements Listener {
 
                         saveConfig();
 
-                        e.getPlayer().sendMessage(Component.text("Vous avez bien changer ").append(type.getDisplayName()).append(Component.text(" en ")).append(nextType.getDisplayName()));
+                        CFastAccess.sendMessage(e.getPlayer(), Component.text("Vous avez bien changer ").append(type.getDisplayName()).append(Component.text(" en ")).append(nextType.getDisplayName()));
                     }
                 }
             }

@@ -9,3 +9,5 @@ commands:
   furnaces:
     permission: athena.commands.furnaces
     description: donne un four
+  artifacts:
+    description: give an artifact to the use
