@@ -1,7 +1,9 @@
 package fr.kayrouge.athena.common;
 
 import fr.kayrouge.athena.common.event.CFurnaceEvent;
+import fr.kayrouge.athena.common.event.CMiscEvents;
 import fr.kayrouge.athena.common.util.CPlatform;
+import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.logging.Logger;
@@ -18,7 +20,9 @@ public abstract class CAthena extends JavaPlugin {
     }
 
     protected void registerEvents() {
-        getServer().getPluginManager().registerEvents(new CFurnaceEvent(), this);
+        PluginManager pm = getServer().getPluginManager();
+        pm.registerEvents(new CFurnaceEvent(), this);
+        pm.registerEvents(new CMiscEvents(), this);
     }
 
 

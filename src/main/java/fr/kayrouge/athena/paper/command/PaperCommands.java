@@ -6,7 +6,13 @@ import com.mojang.brigadier.tree.LiteralCommandNode;
 import fr.kayrouge.athena.common.command.CFurnacesCommand;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
+import org.bukkit.Material;
+import org.bukkit.entity.BlockDisplay;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
+import org.bukkit.util.Transformation;
+import org.joml.Vector3f;
 
 public class PaperCommands {
 
@@ -20,11 +26,19 @@ public class PaperCommands {
                             return builder.buildFuture();
                         })
                         .executes(context -> {
-                            common.execute(context.getSource().getSender(), new String[]{context.getArgument("type", String.class)});
+                            common.execute(context.getSource().getExecutor(), new String[]{context.getArgument("type", String.class)});
                             return Command.SINGLE_SUCCESS;
                         })
                 )
                 .build();
     }
 
+    public static void test(CommandSourceStack stack, String[] args) {
+        Entity e = stack.getExecutor();
+        BlockDisplay block = (BlockDisplay) e.getWorld().spawnEntity(e.getLocation(), EntityType.BLOCK_DISPLAY);
+        block.setBlock(Material.AMETHYST_BLOCK.createBlockData());
+        block.addPassenger(e);
+        Transformation old = block.getTransformation();
+        block.setTransformation(new Transformation(old.getTranslation(), old.getRightRotation(), new Vector3f(1f, 5f, 2f), old.getLeftRotation()));
+    }
 }

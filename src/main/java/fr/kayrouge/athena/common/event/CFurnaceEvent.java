@@ -4,7 +4,6 @@ import fr.kayrouge.athena.common.util.compat.PlatformCompat;
 import fr.kayrouge.athena.common.util.CTextUtil;
 import fr.kayrouge.athena.common.util.compat.ItemCompat;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.Furnace;
@@ -66,6 +65,7 @@ public class CFurnaceEvent implements Listener {
 
         startGlobalTask();
     }
+
 
     @EventHandler
     public void onBurn(FurnaceBurnEvent e) {

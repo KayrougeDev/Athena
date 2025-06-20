@@ -1,7 +1,7 @@
 package fr.kayrouge.athena.paper;
 
-import fr.kayrouge.athena.bukkit.command.BukkitAthenaCommand;
 import fr.kayrouge.athena.common.CAthena;
+import fr.kayrouge.athena.common.command.CAthenaCommand;
 import fr.kayrouge.athena.common.util.CPlatform;
 import fr.kayrouge.athena.paper.command.PaperCommands;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
@@ -31,7 +31,8 @@ public class PaperAthena extends CAthena {
     }
 
     private void registerCommands() {
-        registerCommand("athena", (stack, strings) -> new BukkitAthenaCommand().sendMessage(stack.getSender()));
+        registerCommand("athena", (stack, strings) -> new CAthenaCommand().sendMessage(stack.getSender()));
+        registerCommand("papertest", PaperCommands::test);
         getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, commands -> {
             commands.registrar().register(PaperCommands.contructFurnacesCommand());
         });
