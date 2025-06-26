@@ -6,8 +6,10 @@ import com.mojang.brigadier.tree.LiteralCommandNode;
 import fr.kayrouge.athena.common.artifact.Artifacts;
 import fr.kayrouge.athena.common.command.CArtifactCommand;
 import fr.kayrouge.athena.common.command.CFurnacesCommand;
+import io.papermc.paper.command.brigadier.BasicCommand;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Material;
 import org.bukkit.entity.BlockDisplay;
 import org.bukkit.entity.Entity;
@@ -15,6 +17,9 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.util.Transformation;
 import org.joml.Vector3f;
+
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 public class PaperCommands {
 
@@ -58,5 +63,19 @@ public class PaperCommands {
         block.addPassenger(e);
         Transformation old = block.getTransformation();
         block.setTransformation(new Transformation(old.getTranslation(), old.getRightRotation(), new Vector3f(1f, 5f, 2f), old.getLeftRotation()));
+    }
+
+    public static BasicCommand checkIsPlayerAndExecute(Consumer<Player> command) {
+        return checkIsPlayerAndExecute(command, false);
+    }
+
+    public static BasicCommand checkIsPlayerAndExecute(Consumer<Player> command, boolean message) {
+        return (commandSourceStack, args) -> {
+            if(commandSourceStack.getExecutor() instanceof Player player) {
+                command.accept(player);
+            } else if (message) {
+                commandSourceStack.getExecutor().sendMessage(Component.text("Seul les joueurs peuvent faire ca !"));
+            }
+        };
     }
 }

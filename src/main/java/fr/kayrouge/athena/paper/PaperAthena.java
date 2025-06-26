@@ -2,9 +2,13 @@ package fr.kayrouge.athena.paper;
 
 import fr.kayrouge.athena.common.CAthena;
 import fr.kayrouge.athena.common.command.CAthenaCommand;
+import fr.kayrouge.athena.common.command.CDevWorldCommand;
 import fr.kayrouge.athena.common.util.CPlatform;
 import fr.kayrouge.athena.paper.command.PaperCommands;
+import io.papermc.paper.command.brigadier.BasicCommand;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
+
+import java.util.Collections;
 
 public class PaperAthena extends CAthena {
 
@@ -33,11 +37,16 @@ public class PaperAthena extends CAthena {
     private void registerCommands() {
         registerCommand("athena", (stack, strings) -> new CAthenaCommand().sendMessage(stack.getSender()));
         registerCommand("papertest", PaperCommands::test);
+
+        registerCommand("devworld",PaperCommands.checkIsPlayerAndExecute(new CDevWorldCommand()::join));
+
         getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, commands -> {
             commands.registrar().register(PaperCommands.constructFurnacesCommand());
             commands.registrar().register(PaperCommands.constructArtifactsCommand());
         });
     }
+
+
 
     @Override
     public CPlatform getPlatform() {

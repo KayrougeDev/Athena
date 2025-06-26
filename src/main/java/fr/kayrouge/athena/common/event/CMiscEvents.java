@@ -1,5 +1,7 @@
 package fr.kayrouge.athena.common.event;
 
+import fr.kayrouge.athena.common.CAthena;
+import fr.kayrouge.athena.common.util.compat.EntityCompat;
 import fr.kayrouge.athena.common.util.compat.PlatformCompat;
 import org.bukkit.NamespacedKey;
 import org.bukkit.block.Block;
@@ -24,15 +26,19 @@ public class CMiscEvents implements Listener {
         if(e.getAction() == Action.RIGHT_CLICK_BLOCK && e.getClickedBlock() != null) {
             Block block = e.getClickedBlock();
             if(block.getBlockData() instanceof Stairs) {
-                Chicken sitEntity = (Chicken) e.getPlayer().getWorld().spawnEntity(block.getLocation(), EntityType.CHICKEN);
-                sitEntity.setPersistent(true);
-                sitEntity.getPersistentDataContainer().set(USED_STAIR, PersistentDataType.BOOLEAN, true);
-                sitEntity.setAI(false);
-                sitEntity.teleport(sitEntity.getLocation().add(0.5d,-0.1d,0.5d).add(block.getFace(block).getDirection()));
-                sitEntity.setSilent(true);
-                sitEntity.setInvulnerable(true);
-                sitEntity.setInvisible(true);
-                sitEntity.addPassenger(e.getPlayer());
+                //Chicken sitEntity = (Chicken) e.getPlayer().getWorld().spawnEntity(block.getLocation(), EntityType.CHICKEN);
+
+                Chicken chicken = EntityCompat.spawnEntity(block.getLocation(), Chicken.class, preEntity -> {
+                    preEntity.setPersistent(true);
+                    preEntity.getPersistentDataContainer().set(USED_STAIR, PersistentDataType.BOOLEAN, true);
+                    preEntity.setAI(false);
+
+                    preEntity.setSilent(true);
+                    preEntity.setInvulnerable(true);
+                    preEntity.setInvisible(true);
+                });
+                chicken.teleport(chicken.getLocation().add(0.5d,-0.1d,0.5d).add(block.getFace(block).getDirection()));
+                chicken.addPassenger(e.getPlayer());
             }
         }
     }
@@ -57,7 +63,9 @@ public class CMiscEvents implements Listener {
 
     @EventHandler
     public void shootArrow(EntityShootBowEvent e) {
-        if(e.getProjectile() instanceof AbstractArrow arrow) {
+        if(PlatformCompat.INSTANCE.getConfig().getBoolean("arrowLauncher", false)
+                && e.getProjectile() instanceof AbstractArrow arrow
+                && e.getEntity() instanceof Player) {
             arrow.addPassenger(e.getEntity());
             arrow.setGlowing(true);
             arrow.getPersistentDataContainer().set(USED_STAIR, PersistentDataType.BOOLEAN, true);

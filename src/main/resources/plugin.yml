@@ -11,3 +11,5 @@ commands:
     description: donne un four
   artifacts:
     description: give an artifact to the use
+  devworld:
+    description: switch between world

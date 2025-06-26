@@ -4,6 +4,7 @@ import fr.kayrouge.athena.common.util.CFastAccess;
 import fr.kayrouge.athena.common.util.compat.PlatformCompat;
 import fr.kayrouge.athena.common.util.CTextUtil;
 import fr.kayrouge.athena.common.util.compat.ItemCompat;
+import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
 import net.kyori.adventure.text.Component;
 import org.bukkit.*;
 import org.bukkit.block.Block;
@@ -126,6 +127,12 @@ public class CFurnaceEvent implements Listener {
             Type type = getType(e.getBlock());
             if(type != Type.NORMAL) {
                 e.setDropItems(false);
+                Furnace furnace = (Furnace)e.getBlock().getState();
+                furnace.getInventory().forEach(itemStack -> {
+                    if(itemStack != null && itemStack.getType() != Material.AIR) {
+                        e.getBlock().getWorld().dropItem(e.getBlock().getLocation(), itemStack);
+                    }
+                });
 
                 e.getBlock().getWorld().dropItem(e.getBlock().getLocation(), createFurnaceStack(type));
                 burningFurnaces.remove(e.getBlock().getLocation());
