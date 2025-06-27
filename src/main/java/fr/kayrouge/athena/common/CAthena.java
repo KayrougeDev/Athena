@@ -42,7 +42,17 @@ public abstract class CAthena extends JavaPlugin {
         creator.environment(World.Environment.NORMAL);
         creator.type(WorldType.FLAT);
         creator.generateStructures(true);
-        creator.generatorSettings("minecraft:bedrock,230*minecraft:stone,5*minecraft:dirt,minecraft:grass_block;minecraft:windswept_hills");
+        creator.generatorSettings(
+                "{"
+                        + "\"layers\":["
+                        + "{\"block\":\"minecraft:bedrock\",\"height\":1},"
+                        + "{\"block\":\"minecraft:stone\",\"height\":200},"
+                        + "{\"block\":\"minecraft:dirt\",\"height\":10},"
+                        + "{\"block\":\"minecraft:grass_block\",\"height\":1}"
+                        + "],"
+                        + "\"biome\":\"forest\""
+                        + "}"
+        );
         creator.createWorld();
         LOGGER.info("DevWorld created !");
     }
