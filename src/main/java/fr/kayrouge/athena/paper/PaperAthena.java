@@ -8,6 +8,7 @@ import fr.kayrouge.athena.paper.command.PaperCommands;
 import io.papermc.paper.command.brigadier.BasicCommand;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 
+import java.awt.print.Paper;
 import java.util.Collections;
 
 public class PaperAthena extends CAthena {
@@ -43,6 +44,7 @@ public class PaperAthena extends CAthena {
         getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, commands -> {
             commands.registrar().register(PaperCommands.constructFurnacesCommand());
             commands.registrar().register(PaperCommands.constructArtifactsCommand());
+            commands.registrar().register(PaperCommands.constructHomeCommand());
         });
     }
 

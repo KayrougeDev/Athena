@@ -4,10 +4,12 @@ import fr.kayrouge.athena.common.artifact.Artifacts;
 import fr.kayrouge.athena.common.event.CFurnaceEvent;
 import fr.kayrouge.athena.common.event.CMiscEvents;
 import fr.kayrouge.athena.common.event.CSpecialPlayerEvents;
+import fr.kayrouge.athena.common.util.CFastAccess;
 import fr.kayrouge.athena.common.util.CPlatform;
-import fr.kayrouge.athena.common.util.compat.PlatformCompat;
 import fr.kayrouge.athena.common.util.compat.WorldCompat;
+import net.kyori.adventure.text.Component;
 import org.bukkit.*;
+import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -17,15 +19,29 @@ public abstract class CAthena extends JavaPlugin {
 
     protected final Logger LOGGER = getLogger();
 
+    private boolean experimentalFeaturesEnabled = false;
+
     @Override
     public void onEnable() {
         super.onEnable();
+        saveDefaultConfig();
+        getConfig().options().copyDefaults(true);
+        saveConfig();
+
+        experimentalFeaturesEnabled = getConfig().getBoolean("experimentalFeatures", false);
+
         checkDevWorldAndGenerate();
         LOGGER.info("Starting Athena on "+getPlatform());
         registerEvents();
-        saveDefaultConfig();
 
         Artifacts.init();
+    }
+
+    @Override
+    public void onDisable() {
+        super.onDisable();
+
+        LOGGER.info("Saving SpecialPlayerManager...");
     }
 
     protected void registerEvents() {
@@ -36,7 +52,7 @@ public abstract class CAthena extends JavaPlugin {
     }
 
     private void checkDevWorldAndGenerate() {
-        if(isDevWorldAvailable()) return;
+        if(!isExperimentalFeaturesEnabled() ||isDevWorldAvailable()) return;
         LOGGER.info("DevWorld don't exist, creating it...");
         WorldCreator creator = WorldCompat.newWorldCreator(new NamespacedKey(this, "devworld"));
         creator.environment(World.Environment.NORMAL);
@@ -59,6 +75,14 @@ public abstract class CAthena extends JavaPlugin {
 
     public static boolean isDevWorldAvailable() {
         return Bukkit.getWorld("devworld") != null;
+    }
+
+    public boolean isExperimentalFeaturesEnabled() {
+        return experimentalFeaturesEnabled;
+    }
+
+    public void sendExperimentalFeatureDisabledMessage(CommandSender sender) {
+        CFastAccess.sendMessage(sender, Component.text("Experimental features are disabled !"));
     }
 
     public abstract CPlatform getPlatform();

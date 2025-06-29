@@ -1,6 +1,7 @@
 package fr.kayrouge.athena.common.manager;
 
 import fr.kayrouge.athena.common.util.compat.PlatformCompat;
+import fr.kayrouge.athena.common.util.compat.TaskCompat;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
@@ -12,24 +13,35 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 import javax.annotation.Nullable;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.*;
+import java.util.function.Consumer;
 
 public class CSpecialPlayerManager {
 
     private static final Map<UUID, CSpecialPlayerManager> PLAYERS = new HashMap<>();
 
-    public final File CONFIG_FILE;
-    public final YamlConfiguration CONFIG;
+    public final File PLAYERDATA_FILE;
+    public final File HOMES_FILE;
 
     private final Player player;
 
-    public CSpecialPlayerManager(Player player) {
+    private PlayerData overworldData = null;
+    private PlayerData devworldData = null;
+
+    private final HashMap<String,Location> HOMES = new HashMap<>();
+
+    private CSpecialPlayerManager(Player player) {
         this.player = player;
-        this.CONFIG_FILE = new File(PlatformCompat.INSTANCE.getDataFolder(), "specialplayers/"+player.getUniqueId()+".yml");
-        this.CONFIG = YamlConfiguration.loadConfiguration(CONFIG_FILE);
+        File dataFolder = PlatformCompat.INSTANCE.getDataFolder();
+        this.PLAYERDATA_FILE = new File(dataFolder, "specialplayers/"+player.getUniqueId()+".yml");
+        this.HOMES_FILE = new File(dataFolder, "homes/"+player.getUniqueId()+".yml");
         PLAYERS.put(player.getUniqueId(), this);
+        init();
     }
 
     @Nullable
@@ -43,41 +55,124 @@ public class CSpecialPlayerManager {
         return spm;
     }
 
-    public void onJoin() {
+    public static CSpecialPlayerManager create(Player player) {
+        return new CSpecialPlayerManager(player);
     }
 
+    public void init() {
+        loadHomes();
+    }
 
-    public void onQuit() {
+    public void deInit() {
+        saveHomes();
+        saveWorldsData();
         PLAYERS.remove(this.player.getUniqueId());
         if(isInDevWorld()) {
             moveToOverworld();
         }
     }
 
+    public void onJoin() {
+    }
+
+
+    public void onQuit() {
+        deInit();
+    }
+
+    public void saveWorldsData() {
+        overworldData.saveAsync(this.PLAYERDATA_FILE, () -> devworldData.saveAsync(this.PLAYERDATA_FILE, () -> {}));
+    }
+
+    public static List<Player> getPlayers() {
+        return PLAYERS.keySet().stream().map(Bukkit::getPlayer).filter(Objects::nonNull).toList();
+    }
+
+    public static List<CSpecialPlayerManager> getManagers() {
+        return PLAYERS.values().stream().filter(Objects::nonNull).toList();
+    }
+
+    // HOME LOGIC
+
+    public void loadHomes() {
+        String playerName = this.player.getName();
+        TaskCompat.runAsyncTask(asyncTask -> {
+            String content = "";
+            try {
+                content = Files.readString(this.HOMES_FILE.toPath(), StandardCharsets.UTF_8);
+            } catch (IOException e) {
+                PlatformCompat.LOGGER.severe("Can't load "+playerName+"'s homes");
+            }
+
+            final String yaml = content;
+            TaskCompat.runTask(task -> {
+                this.HOMES.clear();
+                YamlConfiguration config = new YamlConfiguration();
+                try {
+                    config.loadFromString(yaml);
+
+                    for(String name : config.getKeys(false)) {
+                        Location location = config.getLocation(name);
+                        if(location == null) continue;
+                        this.HOMES.put(name, location);
+                    }
+
+                } catch (InvalidConfigurationException e) {
+                    PlatformCompat.LOGGER.severe("Invalid YML in "+playerName+" homes files");
+                }
+            });
+
+        });
+    }
+
+    public void saveHomes() {
+        YamlConfiguration config = new YamlConfiguration();
+        this.HOMES.forEach(config::set);
+        String dump = config.saveToString();
+        String playerName = player.getName();
+        TaskCompat.runAsyncTask(simpleTask -> {
+            try (BufferedWriter writer = Files.newBufferedWriter(this.HOMES_FILE.toPath())) {
+                writer.write(dump);
+            } catch (IOException e) {
+                PlatformCompat.LOGGER.severe("Can't save "+playerName+"'s Homes");
+            }
+        });
+    }
+
+    public HashMap<String, Location> getHomes() {
+        return HOMES;
+    }
+    // END HOME LOGIC
+
     // START DEV WORLD LOGIC
 
     public void moveToOverworld() {
-        PlayerData.of(player, getDevWorld()).save(this.CONFIG, this.CONFIG_FILE);
-        PlayerData data = PlayerData.load(getOverworld(),this.CONFIG, this.CONFIG_FILE);
-        if(data == null) {
-            PlatformCompat.LOGGER.warning("Can't load overworld data for "+player.getName());
-        }else {
-            data.applyOn(player);
-        }
+        World overworld = getOverworld();
+        PlayerData.loadAsync(overworld.getName(), PLAYERDATA_FILE, yamlConfiguration -> {
+            if(overworldData == null) overworldData = PlayerData.getFromConfig(overworld, yamlConfiguration);
+            if(overworldData == null) {
+                PlatformCompat.LOGGER.warning("Can't load overworld data for "+player.getName());
+            }
+            else {
+                overworldData.applyOn(player);
+            }
+        });
     }
 
     public void moveToDevWorld() {
-        PlayerData devWorldData = PlayerData.load(getDevWorld(),this.CONFIG, this.CONFIG_FILE);
-        PlayerData.of(this.player, getOverworld()).save(this.CONFIG, CONFIG_FILE);
-        if(devWorldData == null) {
-            PlatformCompat.LOGGER.info("No devworld data, using default...");
-            this.player.getInventory().clear();
-            this.player.setHealth(20);
-            this.player.teleport(getDevWorld().getSpawnLocation());
-        }
-        else {
-            devWorldData.applyOn(this.player);
-        }
+        World devWorld = getDevWorld();
+        PlayerData.loadAsync(devWorld.getName(), this.PLAYERDATA_FILE, yamlConfiguration -> {
+            if(devworldData == null) devworldData = PlayerData.getFromConfig(getDevWorld(), yamlConfiguration);
+            if(devworldData == null) {
+                PlatformCompat.LOGGER.info("No devworld data, using default...");
+                this.player.getInventory().clear();
+                this.player.setHealth(20);
+                this.player.teleport(getDevWorld().getSpawnLocation());
+            }
+            else {
+                devworldData.applyOn(this.player);
+            }
+        });
     }
 
 
@@ -110,8 +205,8 @@ public class CSpecialPlayerManager {
             player.teleport(location());
         }
 
-        public void save(YamlConfiguration config, File file) {
-            try {
+        public void saveAsync(File file, Runnable callback) {
+            loadAsync(world().getName(), file,config -> {
                 ConfigurationSection section = config.createSection(world.getName());
 
                 section.set("health", health);
@@ -130,51 +225,75 @@ public class CSpecialPlayerManager {
                     }
                 }
 
-                config.save(file);
-            } catch (IOException e) {
-                PlatformCompat.LOGGER.severe("Can't save "+world().getName()+" Player Data");
-            }
+                String stringConfig = config.saveToString();
+
+                TaskCompat.runAsyncTask(simpleTask -> {
+                    try (BufferedWriter writer = Files.newBufferedWriter(file.toPath())) {
+                        writer.write(stringConfig);
+
+                        TaskCompat.runTask(task -> callback.run());
+                    } catch (IOException e) {
+                        PlatformCompat.LOGGER.severe("Can't save "+world().getName()+" Player Data");
+                    }
+                });
+            });
+        }
+
+        public static void loadAsync(String worldName, File file, Consumer<YamlConfiguration> callback) {
+            TaskCompat.runAsyncTask(asyncTask -> {
+                String content = "";
+                try {
+                    content = Files.readString(file.toPath(), StandardCharsets.UTF_8);
+                } catch (IOException e) {
+                    PlatformCompat.LOGGER.severe("Can't load "+worldName+" Player Data");
+                }
+
+                final String yaml = content;
+                TaskCompat.runTask(task -> {
+
+                    YamlConfiguration config = new YamlConfiguration();
+                    try {
+                        config.loadFromString(yaml);
+                        callback.accept(config);
+                    } catch (InvalidConfigurationException e) {
+                        PlatformCompat.LOGGER.severe("Invalid YML in "+worldName);
+                    }
+                });
+
+            });
         }
 
         @Nullable
-        public static PlayerData load(World loadWorld, YamlConfiguration config, File file) {
-            try {
-                config.load(file);
+        public static PlayerData getFromConfig(World loadWorld, YamlConfiguration config) {
+            ConfigurationSection worldSection = config.getConfigurationSection(loadWorld.getName());
+            if(worldSection != null) {
+                final List<ItemStack> inventory = new ArrayList<>();
 
-                ConfigurationSection worldSection = config.getConfigurationSection(loadWorld.getName());
-                if(worldSection != null) {
-                    final List<ItemStack> inventory = new ArrayList<>();
-
-                    // get inventory
-                    ConfigurationSection inventorySection = worldSection.getConfigurationSection("inventory");
-                    if(inventorySection != null) {
-                        for(String item : inventorySection.getKeys(false)) {
-                            ItemStack stack = inventorySection.getItemStack(item);
-                            if(stack != null) {
-                                inventory.add(stack);
-                            }
+                // get inventory
+                ConfigurationSection inventorySection = worldSection.getConfigurationSection("inventory");
+                if(inventorySection != null) {
+                    for(String item : inventorySection.getKeys(false)) {
+                        ItemStack stack = inventorySection.getItemStack(item);
+                        if(stack != null) {
+                            inventory.add(stack);
                         }
                     }
-
-                    // get health
-                    int health = worldSection.getInt("health", 20);
-                    int saturation = worldSection.getInt("saturation", 1);
-                    int foodLevel = worldSection.getInt("foodLevel", 20);
-                    float xp = (float)worldSection.getDouble("xp", 0);
-                    int xpLevel = worldSection.getInt("xplevel", 0);
-                    GameMode gameMode = GameMode.getByValue(worldSection.getInt("gamemode", 0));
-
-                    Location location = worldSection.getLocation("location", loadWorld.getSpawnLocation());
-
-                    return new PlayerData(inventory.toArray(new ItemStack[0]), health, xp, xpLevel, saturation, foodLevel, location, gameMode, loadWorld);
                 }
 
-                return null;
+                // get health
+                int health = worldSection.getInt("health", 20);
+                int saturation = worldSection.getInt("saturation", 1);
+                int foodLevel = worldSection.getInt("foodLevel", 20);
+                float xp = (float)worldSection.getDouble("xp", 0);
+                int xpLevel = worldSection.getInt("xplevel", 0);
+                GameMode gameMode = GameMode.getByValue(worldSection.getInt("gamemode", 0));
 
-            } catch (IOException | InvalidConfigurationException | IllegalArgumentException e) {
-                PlatformCompat.LOGGER.severe("Can't load "+loadWorld.getName()+" Player Data");
-                return null;
+                Location location = worldSection.getLocation("location", loadWorld.getSpawnLocation());
+
+                return new PlayerData(inventory.toArray(new ItemStack[0]), health, xp, xpLevel, saturation, foodLevel, location, gameMode, loadWorld);
             }
+
+            return null;
         }
     }
 }

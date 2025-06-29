@@ -1,2 +1,4 @@
 arrowLauncher: false
 authorizedPlayer: []
+maxHomePerPlayer: 3
+experimentalFeatures: false

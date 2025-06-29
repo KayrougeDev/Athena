@@ -6,6 +6,7 @@ import com.mojang.brigadier.tree.LiteralCommandNode;
 import fr.kayrouge.athena.common.artifact.Artifacts;
 import fr.kayrouge.athena.common.command.CArtifactCommand;
 import fr.kayrouge.athena.common.command.CFurnacesCommand;
+import fr.kayrouge.athena.common.command.CHomeCommand;
 import io.papermc.paper.command.brigadier.BasicCommand;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
@@ -53,6 +54,22 @@ public class PaperCommands {
                             return Command.SINGLE_SUCCESS;
                         })
                 )
+                .build();
+    }
+
+    public static LiteralCommandNode<CommandSourceStack> constructHomeCommand() {
+        CHomeCommand common = new CHomeCommand();
+        return Commands.literal("home")
+                .requires(ctx -> ctx.getExecutor() instanceof Player)
+                .then(Commands.argument("name", StringArgumentType.word())
+                        .suggests((context, builder) -> {
+                            common.getHomeList((Player) context.getSource().getExecutor()).forEach(builder::suggest);
+                            return builder.buildFuture();
+                        })
+                        .executes(context -> {
+                            common.teleport((Player) context.getSource().getExecutor(), context.getArgument("name", String.class));
+                            return Command.SINGLE_SUCCESS;
+                        }))
                 .build();
     }
 

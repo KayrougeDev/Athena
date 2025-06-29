@@ -34,7 +34,7 @@ public final class BukkitAthena extends CAthena {
 
     @Override
     public void onDisable() {
-
+        super.onDisable();
     }
 
     @Override

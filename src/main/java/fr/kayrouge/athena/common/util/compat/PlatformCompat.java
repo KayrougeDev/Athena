@@ -6,7 +6,9 @@ import fr.kayrouge.athena.common.util.CPlatform;
 import fr.kayrouge.athena.paper.PaperAthena;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
+import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
+import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.logging.Logger;
 

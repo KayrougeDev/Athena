@@ -4,6 +4,7 @@ import fr.kayrouge.athena.common.util.compat.PlatformCompat;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.PluginManager;
 
 public class CFastAccess {
@@ -20,4 +21,11 @@ public class CFastAccess {
     }
 
 
+    public static boolean isExperimentalDisabledAndSendMessage(CommandSender sender) {
+        if(PlatformCompat.INSTANCE.isExperimentalFeaturesEnabled()) {
+            PlatformCompat.INSTANCE.sendExperimentalFeatureDisabledMessage(sender);
+            return false;
+        }
+        return true;
+    }
 }

@@ -13,3 +13,7 @@ commands:
     description: give an artifact to the use
   devworld:
     description: switch between world
+  home:
+    description: tp to a home
+  sethome:
+    description: set a home
