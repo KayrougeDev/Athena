@@ -51,7 +51,9 @@ public class CSpecialPlayerManager {
 
     public static CSpecialPlayerManager getOrCreate(Player player) {
         CSpecialPlayerManager spm = get(player);
-        if(spm == null) return new CSpecialPlayerManager(player);
+        if(spm == null) {
+            return create(player);
+        }
         return spm;
     }
 
@@ -81,7 +83,10 @@ public class CSpecialPlayerManager {
     }
 
     public void saveWorldsData() {
-        overworldData.saveAsync(this.PLAYERDATA_FILE, () -> devworldData.saveAsync(this.PLAYERDATA_FILE, () -> {}));
+        if(overworldData == null) return;
+        overworldData.saveAsync(this.PLAYERDATA_FILE, () -> {
+            if(devworldData != null) devworldData.saveAsync(this.PLAYERDATA_FILE, () -> {});
+        });
     }
 
     public static List<Player> getPlayers() {
@@ -129,10 +134,14 @@ public class CSpecialPlayerManager {
         YamlConfiguration config = new YamlConfiguration();
         this.HOMES.forEach(config::set);
         String dump = config.saveToString();
+        PlatformCompat.LOGGER.info(dump);
         String playerName = player.getName();
         TaskCompat.runAsyncTask(simpleTask -> {
-            try (BufferedWriter writer = Files.newBufferedWriter(this.HOMES_FILE.toPath())) {
+            try {
+                Files.createDirectories(this.HOMES_FILE.toPath().getParent());
+                BufferedWriter writer = Files.newBufferedWriter(this.HOMES_FILE.toPath());
                 writer.write(dump);
+                writer.close();
             } catch (IOException e) {
                 PlatformCompat.LOGGER.severe("Can't save "+playerName+"'s Homes");
             }
@@ -228,9 +237,11 @@ public class CSpecialPlayerManager {
                 String stringConfig = config.saveToString();
 
                 TaskCompat.runAsyncTask(simpleTask -> {
-                    try (BufferedWriter writer = Files.newBufferedWriter(file.toPath())) {
+                    try {
+                        Files.createDirectories(file.toPath().getParent());
+                        BufferedWriter writer = Files.newBufferedWriter(file.toPath());
                         writer.write(stringConfig);
-
+                        writer.close();
                         TaskCompat.runTask(task -> callback.run());
                     } catch (IOException e) {
                         PlatformCompat.LOGGER.severe("Can't save "+world().getName()+" Player Data");

@@ -45,6 +45,7 @@ public class PaperAthena extends CAthena {
             commands.registrar().register(PaperCommands.constructFurnacesCommand());
             commands.registrar().register(PaperCommands.constructArtifactsCommand());
             commands.registrar().register(PaperCommands.constructHomeCommand());
+            commands.registrar().register(PaperCommands.constructHomesCommand());
         });
     }
 

@@ -73,6 +73,45 @@ public class PaperCommands {
                 .build();
     }
 
+    public static LiteralCommandNode<CommandSourceStack> constructHomesCommand() {
+        CHomeCommand common = new CHomeCommand();
+        return Commands.literal("homes")
+                .requires(ctx -> ctx.getExecutor() instanceof Player)
+                .then(Commands.literal("set")
+                        .then(Commands.argument("name", StringArgumentType.word())
+                                .executes(ctx -> {
+                                    common.setHome((Player) ctx.getSource().getExecutor(), ctx.getArgument("name", String.class));
+                                    return Command.SINGLE_SUCCESS;
+                                })
+                        )
+                )
+                .then(Commands.literal("del")
+                        .then(Commands.argument("name", StringArgumentType.word())
+                                .suggests((context, builder) -> {
+                                    common.getHomeList((Player) context.getSource().getExecutor()).forEach(builder::suggest);
+                                    return builder.buildFuture();
+                                })
+                                .executes(ctx -> {
+                                    common.delHome((Player) ctx.getSource().getExecutor(), ctx.getArgument("name", String.class));
+                                    return Command.SINGLE_SUCCESS;
+                                })
+                        )
+                )
+                .then(Commands.literal("info")
+                        .then(Commands.argument("name", StringArgumentType.word())
+                                .suggests((context, builder) -> {
+                                    common.getHomeList((Player) context.getSource().getExecutor()).forEach(builder::suggest);
+                                    return builder.buildFuture();
+                                })
+                                .executes(ctx -> {
+                                    common.info((Player) ctx.getSource().getExecutor(), ctx.getArgument("name", String.class));
+                                    return Command.SINGLE_SUCCESS;
+                                })
+                        )
+                )
+                .build();
+    }
+
     public static void test(CommandSourceStack stack, String[] args) {
         Entity e = stack.getExecutor();
         BlockDisplay block = (BlockDisplay) e.getWorld().spawnEntity(e.getLocation(), EntityType.BLOCK_DISPLAY);
