@@ -34,15 +34,8 @@ public class CHomeCommand {
             return;
         }
 
-        player.sendMessage("Putting "+name+" in the homes");
-        manager.getHomes().forEach((s, location) -> {
-            player.sendMessage(s+" "+location.toString());
-        });
         manager.getHomes().put(name, player.getLocation());
-        player.sendMessage("AFTER put "+name+" in the homes");
-        manager.getHomes().forEach((s, location) -> {
-            player.sendMessage(s+" "+location.toString());
-        });
+
         CFastAccess.sendMessage(player, Component.text("Home ")
                 .append(Component.text(name).color(NamedTextColor.GOLD))
                 .append(Component.text(" has been created !")).color(NamedTextColor.RED));
@@ -109,7 +102,7 @@ public class CHomeCommand {
     }
 
     public Component getNoHomeNamedComponent(String name) {
-        return Component.text("You don't have a homes called ").color(NamedTextColor.RED)
+        return Component.text("You don't have a home called ").color(NamedTextColor.RED)
                 .append(
                         Component.text(name).color(NamedTextColor.GOLD)
                 );

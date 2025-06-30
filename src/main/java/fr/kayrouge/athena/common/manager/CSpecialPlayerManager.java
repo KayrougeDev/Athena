@@ -2,15 +2,13 @@ package fr.kayrouge.athena.common.manager;
 
 import fr.kayrouge.athena.common.util.compat.PlatformCompat;
 import fr.kayrouge.athena.common.util.compat.TaskCompat;
-import org.bukkit.Bukkit;
-import org.bukkit.GameMode;
-import org.bukkit.Location;
-import org.bukkit.World;
+import org.bukkit.*;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.potion.PotionEffect;
 
 import javax.annotation.Nullable;
 import java.io.BufferedWriter;
@@ -67,11 +65,11 @@ public class CSpecialPlayerManager {
 
     public void deInit() {
         saveHomes();
-        saveWorldsData();
-        PLAYERS.remove(this.player.getUniqueId());
         if(isInDevWorld()) {
             moveToOverworld();
         }
+        saveWorldsData();
+        PLAYERS.remove(this.player.getUniqueId());
     }
 
     public void onJoin() {
@@ -80,13 +78,6 @@ public class CSpecialPlayerManager {
 
     public void onQuit() {
         deInit();
-    }
-
-    public void saveWorldsData() {
-        if(overworldData == null) return;
-        overworldData.saveAsync(this.PLAYERDATA_FILE, () -> {
-            if(devworldData != null) devworldData.saveAsync(this.PLAYERDATA_FILE, () -> {});
-        });
     }
 
     public static List<Player> getPlayers() {
@@ -134,7 +125,6 @@ public class CSpecialPlayerManager {
         YamlConfiguration config = new YamlConfiguration();
         this.HOMES.forEach(config::set);
         String dump = config.saveToString();
-        PlatformCompat.LOGGER.info(dump);
         String playerName = player.getName();
         TaskCompat.runAsyncTask(simpleTask -> {
             try {
@@ -156,9 +146,13 @@ public class CSpecialPlayerManager {
     // START DEV WORLD LOGIC
 
     public void moveToOverworld() {
+        this.devworldData = PlayerData.of(player, getDevWorld());
         World overworld = getOverworld();
         PlayerData.loadAsync(overworld.getName(), PLAYERDATA_FILE, yamlConfiguration -> {
-            if(overworldData == null) overworldData = PlayerData.getFromConfig(overworld, yamlConfiguration);
+            if(overworldData == null) {
+                PlatformCompat.LOGGER.warning("Loading from file overworld data for "+player.getName());
+                overworldData = PlayerData.getFromConfig(overworld, yamlConfiguration);
+            }
             if(overworldData == null) {
                 PlatformCompat.LOGGER.warning("Can't load overworld data for "+player.getName());
             }
@@ -169,6 +163,7 @@ public class CSpecialPlayerManager {
     }
 
     public void moveToDevWorld() {
+        this.overworldData = PlayerData.of(player, getOverworld());
         World devWorld = getDevWorld();
         PlayerData.loadAsync(devWorld.getName(), this.PLAYERDATA_FILE, yamlConfiguration -> {
             if(devworldData == null) devworldData = PlayerData.getFromConfig(getDevWorld(), yamlConfiguration);
@@ -177,6 +172,8 @@ public class CSpecialPlayerManager {
                 this.player.getInventory().clear();
                 this.player.setHealth(20);
                 this.player.teleport(getDevWorld().getSpawnLocation());
+                this.player.setGameMode(GameMode.CREATIVE);
+                this.player.clearActivePotionEffects();
             }
             else {
                 devworldData.applyOn(this.player);
@@ -192,18 +189,24 @@ public class CSpecialPlayerManager {
     public World getDevWorld() { return Bukkit.getWorld("devworld"); }
     public World getOverworld() { return Bukkit.getWorld("world"); }
 
+    public void saveWorldsData() {
+        if(overworldData == null) return;
+        overworldData.saveAsync(this.PLAYERDATA_FILE, () -> {
+            if(devworldData != null) devworldData.saveAsync(this.PLAYERDATA_FILE, () -> {});
+        });
+    }
+
     // END DEV WORLD LOGIC
 
-    public record PlayerData(ItemStack[] inventory, double health, float xp, int xpLevel, float saturation, int foodLevel, Location location, GameMode gameMode, World world) {
+    public record PlayerData(ItemStack[] inventory, double health, float xp, int xpLevel, float saturation, int foodLevel, Location location, GameMode gameMode, Collection<PotionEffect> potionEffects, World world) {
 
         public static PlayerData of(Player player, World world) {
             return new PlayerData(player.getInventory().getContents(),
                     player.getHealth(), player.getExp(), player.getLevel(), player.getSaturation(), player.getFoodLevel(),
-                    player.getLocation(), player.getGameMode(), world);
+                    player.getLocation(), player.getGameMode(), player.getActivePotionEffects(), world);
         }
 
         public void applyOn(Player player) {
-            PlatformCompat.LOGGER.info("applying data to "+player.getName());
             player.getInventory().setContents(inventory());
             player.setHealth(health());
             player.setSaturation(saturation());
@@ -212,6 +215,7 @@ public class CSpecialPlayerManager {
             player.setExp(xp());
             player.setLevel(xpLevel());
             player.teleport(location());
+            player.addPotionEffects(potionEffects());
         }
 
         public void saveAsync(File file, Runnable callback) {
@@ -232,6 +236,12 @@ public class CSpecialPlayerManager {
                     if(stack != null) {
                         inventorySection.set(String.valueOf(i), stack);
                     }
+                }
+
+                ConfigurationSection potionSection = section.createSection("potions");
+                int i = 0;
+                for(PotionEffect effect : potionEffects()) {
+                    potionSection.set(String.valueOf(i++), effect);
                 }
 
                 String stringConfig = config.saveToString();
@@ -301,7 +311,18 @@ public class CSpecialPlayerManager {
 
                 Location location = worldSection.getLocation("location", loadWorld.getSpawnLocation());
 
-                return new PlayerData(inventory.toArray(new ItemStack[0]), health, xp, xpLevel, saturation, foodLevel, location, gameMode, loadWorld);
+                ConfigurationSection potionSection = worldSection.getConfigurationSection("potions");
+                Collection<PotionEffect> effects = new ArrayList<>();
+
+
+                for(String name : potionSection.getKeys(false)) {
+                    Object i = potionSection.get(name);
+                    if(i instanceof PotionEffect effect) {
+                        effects.add(effect);
+                    }
+                }
+
+                return new PlayerData(inventory.toArray(new ItemStack[0]), health, xp, xpLevel, saturation, foodLevel, location, gameMode,effects, loadWorld);
             }
 
             return null;
